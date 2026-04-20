@@ -53,22 +53,22 @@ class LyapunovAdaptiveTransformer(Node):
     def init_topics(self):
         self.tf_broadcaster = TransformBroadcaster(self)
         self.setpoint_pub = self.create_publisher(
-            PositionTarget, '/mavros/setpoint_raw/local', 10)
+            PositionTarget, 'setpoint_raw/local', 10)
         self.pose_sub = self.create_subscription(
-            PoseStamped, '/mavros/local_position/pose',
+            PoseStamped, 'local_position/pose',
             self.pose_callback, mavros_qos)
         self.vel_sub = self.create_subscription(
-            TwistStamped, '/mavros/local_position/velocity_local',
+            TwistStamped, 'local_position/velocity_local',
             self.velocity_callback, mavros_qos)
         self.state_sub = self.create_subscription(
-            State, '/mavros/state',
+            State, 'state',
             self.state_callback, mavros_qos)
 
     def init_clients(self):
-        self.arming_client = self.create_client(CommandBool, '/mavros/cmd/arming')
+        self.arming_client = self.create_client(CommandBool, 'cmd/arming')
         while not self.arming_client.wait_for_service(timeout_sec=5.0):
             self.get_logger().info('Waiting for arming service...')
-        self.set_mode_client = self.create_client(SetMode, '/mavros/set_mode')
+        self.set_mode_client = self.create_client(SetMode, 'set_mode')
         while not self.set_mode_client.wait_for_service(timeout_sec=5.0):
             self.get_logger().info('Waiting for set_mode service...')
 
@@ -97,10 +97,12 @@ class LyapunovAdaptiveTransformer(Node):
         self.offboard_mode = (msg.mode == "OFFBOARD")
 
     def send_velocity(self, vx, vy, vz):
+        self.get_logger().info(f"Sending velocity command: vx={vx:.2f}, vy={vy:.2f}, vz={vz:.2f}")
+
         vx, vy, vz = saturate_vector(vx, vy, vz, self.VEL_MAX)
         msg = PositionTarget()
         msg.header.stamp = self.get_clock().now().to_msg()
-        msg.header.frame_id = "map"
+        msg.header.frame_id = "base_link"
         msg.coordinate_frame = PositionTarget.FRAME_LOCAL_NED
         msg.type_mask = (
             PositionTarget.IGNORE_PX |
@@ -113,7 +115,6 @@ class LyapunovAdaptiveTransformer(Node):
         msg.velocity.x = float(vx)
         msg.velocity.y = float(vy)
         msg.velocity.z = float(vz)
-        msg.yaw_rate = 0.0
         self.setpoint_pub.publish(msg)
 
     async def set_offboard_and_arm(self):
@@ -198,7 +199,7 @@ class LyapunovAdaptiveTransformer(Node):
 
             tf = TransformStamped()
             tf.header.stamp = self.get_clock().now().to_msg()
-            tf.header.frame_id = "map"
+            tf.header.frame_id = "autonomy_park"
             tf.child_frame_id = "target_position"
             tf.transform.translation.x = xd[0].item()
             tf.transform.translation.y = xd[1].item()
@@ -356,6 +357,7 @@ class LyapunovAdaptiveTransformer(Node):
         try:
             await self.set_offboard_and_arm()
             await self.takeoff(target_height=2.5)
+            await self.return_home()
             await self.run_trajectory()
             await self.return_home()
         except Exception as e:
