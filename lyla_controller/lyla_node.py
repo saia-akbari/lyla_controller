@@ -35,8 +35,8 @@ from . import data_manager
 class LyapunovLangevinAdaptiveNN(Node): #LyapunovAdaptiveTransformer(Node):
 
     def __init__(self):
-        super().__init__('lyapunov_adaptive_transformer')
-        self.initialize_lyat()
+        super().__init__('lyla_node')
+        self.initialize_lyla()
         self.init_states()
         self.init_params()
         self.init_topics()
@@ -178,7 +178,7 @@ class LyapunovLangevinAdaptiveNN(Node): #LyapunovAdaptiveTransformer(Node):
         while rclpy.ok():
             try:
                 t = (self.get_clock().now() - traj_start_time).nanoseconds / 1e9
-                if t > self.tf_end:
+                if t > self.tf:
                     self.get_logger().info(f"Reached final time of {self.tf} seconds.")
                     break
                 
@@ -197,7 +197,7 @@ class LyapunovLangevinAdaptiveNN(Node): #LyapunovAdaptiveTransformer(Node):
                 self.get_logger().error(f"Error in control loop: {e}")
                 self.get_logger().error(f"Error details: {type(e)}") 
 
-    def compute_control_input(self, t: float, controller: LyLA_forRos.LbDNN_Controller) -> torch.Tensor:
+    def compute_control_input(self, t: float, controller: LyLA_forROS.LbDNN_Controller) -> torch.Tensor:
         x = torch.tensor([self.position[0], self.position[1], self.position[2],
                             self.velocity[0], self.velocity[1], self.velocity[2]],
                             dtype=torch.float32)
@@ -207,7 +207,7 @@ class LyapunovLangevinAdaptiveNN(Node): #LyapunovAdaptiveTransformer(Node):
         self.get_logger().info(f"Time: {t_tensor.item()}")
         xd, xd_dot = LyLA_forROS.Dynamics.desired_trajectory(t_tensor)
         u, Phi = controller.parameter_adaptation(x, t_tensor)
-        theta = torch.cat([p.view(-1) for p in controller.transformer.parameters()])
+        theta = torch.cat([p.view(-1) for p in controller.nn.parameters()])
         data_manager.save_theta_to_csv(self.step, t, theta.detach().cpu().numpy())
 
         # Data Storage

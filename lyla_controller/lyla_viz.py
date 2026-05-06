@@ -31,7 +31,7 @@ class LyLAViz(Node):
         # Subscriber for drone position
         self.pose_sub = self.create_subscription(
             PoseStamped,
-            '/mavros/local_position/pose',
+            'autonomy_park/pose',
             self.pose_callback,
             mavros_qos)
 
