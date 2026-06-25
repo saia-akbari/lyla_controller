@@ -141,7 +141,7 @@ class LyapunovLangevinAdaptive(Node):
     def initialize_lyla(self) -> None:
          # Load configuration file for simulation
          # -------------------- check this folder from autonomy park and update it there
-        with open('src/lyla_controller/lyla_controller/config.json', 'r') as config_file: config = json.load(config_file)
+        with open('src/lyla_controller/lyla_controller/config_LyLA.json', 'r') as config_file: config = json.load(config_file)
         self.config = config
         self.n_states = self.config['n_states']
         self.tf = self.config['T_final']
