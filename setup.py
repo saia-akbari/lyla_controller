@@ -29,7 +29,7 @@ setup(
     },
     entry_points={
         'console_scripts': [
-            'LyLA_node = lyla_controller.LyLA_node:main',
+            'lyla_node = lyla_controller.LyLA_node:main',
             'lyla_viz = lyla_controller.lyla_viz:main',
         ],
     },
