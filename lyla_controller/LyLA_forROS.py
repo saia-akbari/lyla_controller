@@ -155,7 +155,7 @@ class LbDNN_Controller:
 
         theta = torch.cat([p.view(-1) for p in self.nn.parameters()])
 
-        mu = 9.0 * e
+        mu = 2.0 * e
         drift_vec = self.learning_rate * (jacobian.T @ e - self.forgetting_factor * theta)
         
         diffusion_scale = self.learning_rate * torch.sqrt(self.kT * torch.abs(torch.dot(e, mu)))

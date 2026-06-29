@@ -464,6 +464,11 @@ class LyapunovLangevinAdaptive(Node):
 
                 # return to home
                 await self.return_home()
+
+                # Send some neutral commands to stabilize
+                for i in range(80):
+                    self.send_command(0.0, 0.0, 0.0, 0.0, 0.0)
+                    await self.sleep(0.01)
                 
                 # Run trajectory
                 await self.run_trajectory()
